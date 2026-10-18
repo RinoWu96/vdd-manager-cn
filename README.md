@@ -69,3 +69,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Package
 - 大版本更新显卡或芯片组驱动前，先卸载 VDD，更新完再安装。
 - 开机黑屏时：进入安全模式 → 设备管理器 → 显示适配器 → 卸载 Virtual Display Driver。
 - 虚拟屏是唯一显示器时，禁用或卸载驱动可能导致本地黑屏或远程连接断开，程序会先提醒。
+
+## 许可证
+
+[MIT](LICENSE)。Virtual Display Driver 本身也使用 MIT 许可证，版权归其作者所有；本项目不包含它的任何代码。
