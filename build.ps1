@@ -117,7 +117,8 @@ if ($Package) {
     $stage = Join-Path $dist 'VDD-Manager-CN'
     Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $stage | Out-Null
-    Copy-Item (Join-Path $root 'VDDManager.exe'), (Join-Path $root 'VDDManager.ps1'), $ico, (Join-Path $root 'README.md'), (Join-Path $root 'LICENSE') $stage
+    Copy-Item (Join-Path $root 'VDDManager.exe'), (Join-Path $root 'VDDManager.ps1'), $ico, (Join-Path $root 'README.md'), (Join-Path $root 'LICENSE'),
+        (Join-Path $root 'AutoSwitch.ps1'), (Join-Path $root 'DisplayTopology.cs') $stage
     $zip = Join-Path $dist 'VDD-Manager-CN.zip'
     Compress-Archive -Path $stage -DestinationPath $zip -Force
     Write-Host "发布包：$zip"

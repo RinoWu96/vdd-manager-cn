@@ -9,22 +9,26 @@ using System.Windows.Forms;
 [assembly: AssemblyTitle("虚拟显示器管理器")]
 [assembly: AssemblyDescription("Virtual Display Driver 中文管理器")]
 [assembly: AssemblyProduct("VDD 中文管理器")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.1.0.0")]
+[assembly: AssemblyFileVersion("1.1.0.0")]
 
 static class Program
 {
     const string Title = "虚拟显示器管理器";
 
+    // 无参数：打开管理器窗口（启动后立即退出）
+    // --autoswitch：运行后台自动切换（等它结束，供计划任务判断是否还在运行）
     [STAThread]
-    static int Main()
+    static int Main(string[] args)
     {
+        bool autoSwitch = args.Length > 0 && args[0].Equals("--autoswitch", StringComparison.OrdinalIgnoreCase);
         string dir = AppDomain.CurrentDomain.BaseDirectory;
-        string script = Path.Combine(dir, "VDDManager.ps1");
+        string script = Path.Combine(dir, autoSwitch ? "AutoSwitch.ps1" : "VDDManager.ps1");
         if (!File.Exists(script))
         {
-            MessageBox.Show("找不到 VDDManager.ps1。\n请把它和 VDDManager.exe 放在同一个文件夹里。",
-                            Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (!autoSwitch)
+                MessageBox.Show("找不到 " + Path.GetFileName(script) + "。\n请把它和 VDDManager.exe 放在同一个文件夹里。",
+                                Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
 
@@ -37,12 +41,15 @@ static class Program
         psi.WorkingDirectory = dir;
         try
         {
-            Process.Start(psi);
-            return 0;
+            var p = Process.Start(psi);
+            if (!autoSwitch) return 0;
+            p.WaitForExit();
+            return p.ExitCode;
         }
         catch (Exception e)
         {
-            MessageBox.Show("无法启动 PowerShell：\n" + e.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (!autoSwitch)
+                MessageBox.Show("无法启动 PowerShell：\n" + e.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 2;
         }
     }

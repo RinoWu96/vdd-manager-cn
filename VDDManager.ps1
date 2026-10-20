@@ -542,6 +542,7 @@ function Get-ConfiguredCount {
         <ListBox x:Name="Nav" BorderThickness="0" Background="Transparent" ItemContainerStyle="{StaticResource NavItem}">
           <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="概览"/></StackPanel></ListBoxItem>
           <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="显示设置"/></StackPanel></ListBoxItem>
+          <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8AB;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="自动切换"/></StackPanel></ListBoxItem>
           <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="可选分辨率"/></StackPanel></ListBoxItem>
           <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="驱动选项"/></StackPanel></ListBoxItem>
           <ListBoxItem><StackPanel Orientation="Horizontal"><TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" Width="26" VerticalAlignment="Center"/><TextBlock Text="驱动管理"/></StackPanel></ListBoxItem>
@@ -649,8 +650,49 @@ function Get-ConfiguredCount {
           </Border>
         </StackPanel>
 
-        <!-- 可选分辨率 -->
+        <!-- 自动切换 -->
         <StackPanel x:Name="Page2" Visibility="Collapsed">
+          <TextBlock Style="{StaticResource H1}" Text="自动切换"/>
+          <TextBlock Style="{StaticResource Sub}" Text="打开笔记本或接上外接屏时，自动改用实体显示器并断开虚拟屏；实体显示器都不可用时（比如合盖远程），自动接回虚拟屏。开启后在后台运行，每次登录自动启动，不需要管理员权限。"/>
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Text="状态" Style="{StaticResource Hint}"/>
+              <TextBlock x:Name="AsState" Style="{StaticResource Big}"/>
+              <TextBlock x:Name="AsStateSub" Style="{StaticResource Hint}" Margin="0,0,0,14"/>
+              <WrapPanel>
+                <Button x:Name="BtnAsEnable" Style="{StaticResource PrimaryBtn}" Content="开启自动切换"/>
+                <Button x:Name="BtnAsDisable" Content="关闭自动切换"/>
+                <Button x:Name="BtnAsCheck" Content="立即检查一次"/>
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="现在检测到的显示器"/>
+              <DataGrid x:Name="AsGrid" IsReadOnly="True" SelectionMode="Single" MinHeight="70">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="类型" Binding="{Binding Kind}" Width="*"/>
+                  <DataGridTextColumn Header="名称" Binding="{Binding Name}" Width="1.4*"/>
+                  <DataGridTextColumn Header="连接" Binding="{Binding AvailableText}" Width="0.8*"/>
+                  <DataGridTextColumn Header="启用" Binding="{Binding ActiveText}" Width="1.4*"/>
+                </DataGrid.Columns>
+              </DataGrid>
+              <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0"
+                         Text="只在实体显示器接入或拔出的那一刻切换；之后你在 Windows 里手动调整的布局（比如保留虚拟屏当副屏）不会被改回去。"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource CardTitle}" Text="最近记录"/>
+              <TextBox x:Name="AsLog" Height="150" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                       VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" FontFamily="Consolas" FontSize="12"
+                       Background="#F9FAFB"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- 可选分辨率 -->
+        <StackPanel x:Name="Page3" Visibility="Collapsed">
           <TextBlock Style="{StaticResource H1}" Text="可选分辨率"/>
           <TextBlock Style="{StaticResource Sub}" Text="这里列出的分辨率会出现在 Windows 和“显示设置”页的分辨率列表里。修改后点“保存并重启驱动”生效。"/>
           <Border Style="{StaticResource Card}">
@@ -701,7 +743,7 @@ function Get-ConfiguredCount {
         </StackPanel>
 
         <!-- 驱动选项 -->
-        <StackPanel x:Name="Page3" Visibility="Collapsed">
+        <StackPanel x:Name="Page4" Visibility="Collapsed">
           <TextBlock Style="{StaticResource H1}" Text="驱动选项"/>
           <TextBlock Style="{StaticResource Sub}" Text="高级功能开关。不确定的保持默认即可，修改后点“保存并重启驱动”生效。"/>
           <Border Style="{StaticResource Card}">
@@ -723,7 +765,7 @@ function Get-ConfiguredCount {
         </StackPanel>
 
         <!-- 驱动管理 -->
-        <StackPanel x:Name="Page4" Visibility="Collapsed">
+        <StackPanel x:Name="Page5" Visibility="Collapsed">
           <TextBlock Style="{StaticResource H1}" Text="驱动管理"/>
           <TextBlock Style="{StaticResource Sub}" Text="禁用、启用、安装、卸载驱动需要管理员权限，点击后 Windows 会弹出授权窗口。"/>
           <Border Style="{StaticResource Card}">
@@ -779,7 +821,7 @@ function Get-ConfiguredCount {
         </StackPanel>
 
         <!-- 配置文件 -->
-        <StackPanel x:Name="Page5" Visibility="Collapsed">
+        <StackPanel x:Name="Page6" Visibility="Collapsed">
           <TextBlock Style="{StaticResource H1}" Text="配置文件"/>
           <TextBlock Style="{StaticResource Sub}" Text="直接编辑 vdd_settings.xml。保存前会自动检查格式，并备份旧文件。"/>
           <Border Style="{StaticResource Card}">
@@ -1064,6 +1106,106 @@ function Apply-Mode {
     Refresh-DisplayPage
 }
 
+# ================= 自动切换 =================
+$AsTaskName = 'VDDAutoSwitch'
+$AsLogFile  = Join-Path $AppDir 'autoswitch.log'
+$AsPidFile  = Join-Path $AppDir 'autoswitch.pid'
+$script:hasTopology = $false
+try {
+    Add-Type -TypeDefinition ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'DisplayTopology.cs')))
+    $script:hasTopology = $true
+} catch {}
+$script:sched = $null
+function Get-Scheduler {
+    if (-not $script:sched) { $script:sched = New-Object -ComObject Schedule.Service; $script:sched.Connect() }
+    return $script:sched
+}
+function Get-AsTask { try { (Get-Scheduler).GetFolder('\').GetTask($AsTaskName) } catch { $null } }
+function Get-AsProcess {
+    try {
+        $id = [int](Get-Content $AsPidFile -ErrorAction Stop | Select-Object -First 1)
+        $p = Get-Process -Id $id -ErrorAction Stop
+        if ($p.ProcessName -eq 'powershell') { return $p }
+    } catch {}
+    return $null
+}
+function Enable-AutoSwitch {
+    $exe = Join-Path $PSScriptRoot 'VDDManager.exe'
+    if (Test-Path $exe) { $cmd = $exe; $arg = '--autoswitch' }
+    else {
+        $cmd = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $arg = "-NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $PSScriptRoot 'AutoSwitch.ps1')`""
+    }
+    $e = { param($s) [Security.SecurityElement]::Escape($s) }
+    $user = & $e "$env:USERDOMAIN\$env:USERNAME"
+    # 登录时启动；另有每分钟一次的保活触发器，进程还在时会被忽略，意外退出后 1 分钟内自动拉起
+    $xml = @"
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo><Description>VDD 中文管理器：有实体显示器时断开虚拟屏，没有时接回虚拟屏。</Description></RegistrationInfo>
+  <Triggers>
+    <LogonTrigger><Enabled>true</Enabled><UserId>$user</UserId></LogonTrigger>
+    <TimeTrigger>
+      <Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition>
+      <StartBoundary>$((Get-Date).ToString('yyyy-MM-ddTHH:mm:ss'))</StartBoundary><Enabled>true</Enabled>
+    </TimeTrigger>
+  </Triggers>
+  <Principals><Principal id="Author"><UserId>$user</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <IdleSettings><StopOnIdleEnd>false</StopOnIdleEnd><RestartOnIdle>false</RestartOnIdle></IdleSettings>
+    <Enabled>true</Enabled>
+  </Settings>
+  <Actions Context="Author">
+    <Exec><Command>$(& $e $cmd)</Command><Arguments>$(& $e $arg)</Arguments><WorkingDirectory>$(& $e $PSScriptRoot)</WorkingDirectory></Exec>
+  </Actions>
+</Task>
+"@
+    [void](Get-Scheduler).GetFolder('\').RegisterTask($AsTaskName, $xml, 6, $null, $null, 3)
+    [void](Get-AsTask).Run($null)
+}
+function Disable-AutoSwitch {
+    $t = Get-AsTask
+    if ($t) { try { $t.Stop(0) } catch {}; (Get-Scheduler).GetFolder('\').DeleteTask($AsTaskName, 0) }
+    $p = Get-AsProcess
+    if ($p) { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+    Remove-Item $AsPidFile -ErrorAction SilentlyContinue
+}
+$script:asSig = ''
+function Refresh-AutoSwitch {
+    if (-not $script:hasTopology) {
+        $ui.AsState.Text = '不可用'; $ui.AsState.Foreground = $brush.Red
+        $ui.AsStateSub.Text = '缺少 DisplayTopology.cs，请重新下载完整的程序包。'
+        foreach ($b in 'BtnAsEnable', 'BtnAsDisable', 'BtnAsCheck') { $ui[$b].IsEnabled = $false }
+        return
+    }
+    $t = Get-AsTask
+    $p = Get-AsProcess
+    if (-not $t) {
+        $ui.AsState.Text = '未开启'; $ui.AsState.Foreground = $brush.Gray
+        $ui.AsStateSub.Text = '开启后会立即开始工作，以后每次登录自动启动。'
+    } elseif ($p) {
+        $ui.AsState.Text = '已开启 · 正在运行'; $ui.AsState.Foreground = $brush.Green
+        $ui.AsStateSub.Text = "后台每 3 秒检查一次显示器（进程 $($p.Id)）。"
+    } else {
+        $ui.AsState.Text = '已开启 · 未运行'; $ui.AsState.Foreground = $brush.Amber
+        $ui.AsStateSub.Text = '1 分钟内会自动拉起；也可以关闭后重新开启。'
+    }
+    $ui.BtnAsEnable.IsEnabled = -not $t
+    $ui.BtnAsDisable.IsEnabled = [bool]$t
+    $ui.BtnAsCheck.IsEnabled = $true
+
+    $targets = [VddCn.Topology]::GetTargets()
+    $sig = ($targets | ForEach-Object { "$($_.Key)|$($_.Available)|$($_.Active)|$($_.Gdi)" }) -join ';'
+    if ($sig -ne $script:asSig) { $ui.AsGrid.ItemsSource = $targets; $script:asSig = $sig }
+
+    $log = if (Test-Path $AsLogFile) { (Get-Content $AsLogFile -Tail 40 -Encoding UTF8) -join "`r`n" } else { '（还没有记录）' }
+    if ($ui.AsLog.Text -ne $log) { $ui.AsLog.Text = $log; $ui.AsLog.ScrollToEnd() }
+}
+
 # ================= 可选分辨率 =================
 $script:resRows = New-Object 'System.Collections.ObjectModel.ObservableCollection[VddCn.ResRow]'
 $ui.ResGrid.ItemsSource = $script:resRows
@@ -1247,16 +1389,17 @@ function Save-RawPage {
 }
 
 # ================= 导航 =================
-$pages = 0..5 | ForEach-Object { $ui["Page$_"] }
+$pages = 0..6 | ForEach-Object { $ui["Page$_"] }
 function Show-Page([int]$i) {
     for ($k = 0; $k -lt $pages.Count; $k++) { $pages[$k].Visibility = if ($k -eq $i) { 'Visible' } else { 'Collapsed' } }
     switch ($i) {
         0 { Refresh-Overview }
         1 { Refresh-DisplayPage }
-        2 { if (-not $script:resDirty) { Load-ResPage } }
-        3 { Load-OptPage }
-        4 { Refresh-Driver }
-        5 { Load-RawPage }
+        2 { Refresh-AutoSwitch }
+        3 { if (-not $script:resDirty) { Load-ResPage } }
+        4 { Load-OptPage }
+        5 { Refresh-Driver }
+        6 { Load-RawPage }
     }
 }
 $ui.Nav.Add_SelectionChanged({ Safe { Show-Page $ui.Nav.SelectedIndex } })
@@ -1290,6 +1433,24 @@ $ui.BtnApplyCount.Add_Click({ Safe {
         Invoke-DriverReload
     }
     $script:refreshIn = 5
+} })
+
+$ui.BtnAsEnable.Add_Click({ Safe {
+    Enable-AutoSwitch
+    Set-Status '自动切换已开启。' 'Green'
+    $script:refreshIn = 3
+    Refresh-AutoSwitch
+} })
+$ui.BtnAsDisable.Add_Click({ Safe {
+    Disable-AutoSwitch
+    Set-Status '自动切换已关闭，现在的显示布局保持不变。' 'Amber'
+    Refresh-AutoSwitch
+} })
+$ui.BtnAsCheck.Add_Click({ Safe {
+    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass',
+        '-File', "`"$(Join-Path $PSScriptRoot 'AutoSwitch.ps1')`"", '-Once')
+    Set-Status '正在检查显示器，几秒后会更新记录。'
+    $script:refreshIn = 4
 } })
 
 $ui.CmbPreset.Add_SelectionChanged({ Safe {
@@ -1396,12 +1557,13 @@ $timer.Add_Tick({
             $script:refreshIn--
             if ($script:refreshIn -eq 0) {
                 Refresh-Driver
-                switch ($ui.Nav.SelectedIndex) { 0 { Refresh-Overview } 1 { Refresh-DisplayPage } }
+                switch ($ui.Nav.SelectedIndex) { 0 { Refresh-Overview } 1 { Refresh-DisplayPage } 2 { Refresh-AutoSwitch } }
             }
         }
         if ($script:tick % 3 -eq 0) {
             if ($ui.Nav.SelectedIndex -eq 0) { Refresh-Overview }
-            if ($ui.Nav.SelectedIndex -eq 4 -and -not $script:op) { Refresh-Driver }
+            if ($ui.Nav.SelectedIndex -eq 2) { Refresh-AutoSwitch }
+            if ($ui.Nav.SelectedIndex -eq 5 -and -not $script:op) { Refresh-Driver }
         }
     } catch {}
 })
