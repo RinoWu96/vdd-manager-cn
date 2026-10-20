@@ -107,7 +107,8 @@ $csc = Join-Path ([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirect
 if (-not (Test-Path $csc)) { throw "找不到 C# 编译器：$csc" }
 $exe = Join-Path $root 'VDDManager.exe'
 & $csc /nologo /target:winexe /optimize+ /utf8output /codepage:65001 "/win32icon:$ico" "/out:$exe" `
-    /reference:System.Windows.Forms.dll (Join-Path $root 'launcher\VDDManager.cs')
+    /reference:System.Windows.Forms.dll /reference:System.Core.dll `
+    (Join-Path $root 'launcher\VDDManager.cs') (Join-Path $root 'launcher\AutoSwitch.cs') (Join-Path $root 'DisplayTopology.cs')
 if ($LASTEXITCODE -ne 0) { throw "编译失败（代码 $LASTEXITCODE）" }
 Write-Host "启动器：$exe"
 
@@ -118,7 +119,7 @@ if ($Package) {
     Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $stage | Out-Null
     Copy-Item (Join-Path $root 'VDDManager.exe'), (Join-Path $root 'VDDManager.ps1'), $ico, (Join-Path $root 'README.md'), (Join-Path $root 'LICENSE'),
-        (Join-Path $root 'AutoSwitch.ps1'), (Join-Path $root 'DisplayTopology.cs') $stage
+        (Join-Path $root 'DisplayTopology.cs') $stage
     $zip = Join-Path $dist 'VDD-Manager-CN.zip'
     Compress-Archive -Path $stage -DestinationPath $zip -Force
     Write-Host "发布包：$zip"

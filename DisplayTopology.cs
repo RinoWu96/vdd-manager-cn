@@ -1,5 +1,5 @@
 ﻿// 显示拓扑（CCD API）：查询哪些显示器已连接 / 已启用，启用全部显示器，断开虚拟屏。
-// VDDManager.ps1 和 AutoSwitch.ps1 都会加载这个文件。
+// 管理器（VDDManager.ps1 运行时加载）和启动器（VDDManager.exe，编译进去）共用这个文件。
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;

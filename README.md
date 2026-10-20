@@ -19,9 +19,9 @@
 | 文件 | 说明 |
 | --- | --- |
 | `VDDManager.ps1` | 主程序（PowerShell + WPF） |
-| `AutoSwitch.ps1` | 自动切换的后台程序（计划任务 `VDDAutoSwitch` 通过 `VDDManager.exe --autoswitch` 启动） |
+| `launcher/AutoSwitch.cs` | 自动切换的后台逻辑，编译进 `VDDManager.exe`，由计划任务 `VDDAutoSwitch` 以 `--autoswitch` 参数启动 |
 | `DisplayTopology.cs` | 显示拓扑（Windows CCD API）：检测已连接 / 已启用的显示器、启用全部、断开虚拟屏 |
-| `launcher/VDDManager.cs` | 启动器源码 |
+| `launcher/VDDManager.cs` | 启动器源码：无参数时打开管理器，`--autoswitch` 运行自动切换 |
 | `build.ps1` | 生成图标 `VDDManager.ico`、编译 `VDDManager.exe`；加 `-Package` 同时打包 `dist/VDD-Manager-CN.zip` |
 
 ## 自己构建
@@ -63,10 +63,11 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Package
 
 ## 自动切换的规则
 
-- 每 3 秒检查一次哪些显示器“已连接”。笔记本内屏、外接屏算实体显示器；VDD、TeamViewer 等虚拟显示器不算。
+- 监听显示器插拔、显示设置变化、合盖 / 开盖和睡眠唤醒等系统通知，收到后检查哪些显示器“已连接”；另每 30 秒兜底检查一次。笔记本内屏、外接屏算实体显示器；VDD、TeamViewer 等虚拟显示器不算。
 - **实体显示器接入时**：启用所有实体显示器，断开 VDD 虚拟屏，主显示器优先用内屏。
 - **实体显示器都不可用时**：接回 VDD 虚拟屏，保证远程连接时有画面。
 - 只在实体显示器接入或拔出的那一刻动作。之后在 Windows 里手动调整的布局（比如保留虚拟屏当副屏）不会被改回去；但下次登录或再次插拔时会重新按规则切换。
+- 后台进程是一个很小的 C# 程序（不启动 PowerShell），内存约 24 MB，空闲时几乎不占 CPU。
 - 记录写在 `%APPDATA%\VDDManagerCN\autoswitch.log`，在“自动切换”页可以直接看到。
 
 ## 测试过的版本

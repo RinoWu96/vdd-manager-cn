@@ -16,19 +16,22 @@ static class Program
 {
     const string Title = "虚拟显示器管理器";
 
-    // 无参数：打开管理器窗口（启动后立即退出）
-    // --autoswitch：运行后台自动切换（等它结束，供计划任务判断是否还在运行）
+    // 无参数：打开管理器窗口（启动 VDDManager.ps1 后立即退出）
+    // --autoswitch：在本进程里运行后台自动切换（计划任务用）
+    // --autoswitch-once：检查一次就退出（管理器的“立即检查一次”用）
     [STAThread]
     static int Main(string[] args)
     {
-        bool autoSwitch = args.Length > 0 && args[0].Equals("--autoswitch", StringComparison.OrdinalIgnoreCase);
+        string mode = args.Length > 0 ? args[0].ToLowerInvariant() : "";
+        if (mode == "--autoswitch") return VddCn.AutoSwitch.Run();
+        if (mode == "--autoswitch-once") return VddCn.AutoSwitch.RunOnce();
+
         string dir = AppDomain.CurrentDomain.BaseDirectory;
-        string script = Path.Combine(dir, autoSwitch ? "AutoSwitch.ps1" : "VDDManager.ps1");
+        string script = Path.Combine(dir, "VDDManager.ps1");
         if (!File.Exists(script))
         {
-            if (!autoSwitch)
-                MessageBox.Show("找不到 " + Path.GetFileName(script) + "。\n请把它和 VDDManager.exe 放在同一个文件夹里。",
-                                Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("找不到 VDDManager.ps1。\n请把它和 VDDManager.exe 放在同一个文件夹里。",
+                            Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
 
@@ -41,15 +44,12 @@ static class Program
         psi.WorkingDirectory = dir;
         try
         {
-            var p = Process.Start(psi);
-            if (!autoSwitch) return 0;
-            p.WaitForExit();
-            return p.ExitCode;
+            Process.Start(psi);
+            return 0;
         }
         catch (Exception e)
         {
-            if (!autoSwitch)
-                MessageBox.Show("无法启动 PowerShell：\n" + e.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("无法启动 PowerShell：\n" + e.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 2;
         }
     }

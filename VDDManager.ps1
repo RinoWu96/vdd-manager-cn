@@ -1125,17 +1125,15 @@ function Get-AsProcess {
     try {
         $id = [int](Get-Content $AsPidFile -ErrorAction Stop | Select-Object -First 1)
         $p = Get-Process -Id $id -ErrorAction Stop
-        if ($p.ProcessName -eq 'powershell') { return $p }
+        if ($p.ProcessName -eq 'VDDManager') { return $p }
     } catch {}
     return $null
 }
+# 自动切换运行在 VDDManager.exe 里（C#，不需要 PowerShell，内存占用很小）
+$AsExe = Join-Path $PSScriptRoot 'VDDManager.exe'
 function Enable-AutoSwitch {
-    $exe = Join-Path $PSScriptRoot 'VDDManager.exe'
-    if (Test-Path $exe) { $cmd = $exe; $arg = '--autoswitch' }
-    else {
-        $cmd = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-        $arg = "-NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $PSScriptRoot 'AutoSwitch.ps1')`""
-    }
+    if (-not (Test-Path $AsExe)) { throw "找不到 VDDManager.exe。从源码运行时请先执行 build.ps1。" }
+    $cmd = $AsExe; $arg = '--autoswitch'
     $e = { param($s) [Security.SecurityElement]::Escape($s) }
     $user = & $e "$env:USERDOMAIN\$env:USERNAME"
     # 登录时启动；另有每分钟一次的保活触发器，进程还在时会被忽略，意外退出后 1 分钟内自动拉起
@@ -1189,7 +1187,7 @@ function Refresh-AutoSwitch {
         $ui.AsStateSub.Text = '开启后会立即开始工作，以后每次登录自动启动。'
     } elseif ($p) {
         $ui.AsState.Text = '已开启 · 正在运行'; $ui.AsState.Foreground = $brush.Green
-        $ui.AsStateSub.Text = "后台每 3 秒检查一次显示器（进程 $($p.Id)）。"
+        $ui.AsStateSub.Text = "后台监听显示器插拔、合盖开盖和睡眠唤醒，另每 30 秒兜底检查一次（进程 $($p.Id)，内存约 $([math]::Round($p.WorkingSet64 / 1MB)) MB）。"
     } else {
         $ui.AsState.Text = '已开启 · 未运行'; $ui.AsState.Foreground = $brush.Amber
         $ui.AsStateSub.Text = '1 分钟内会自动拉起；也可以关闭后重新开启。'
@@ -1447,8 +1445,8 @@ $ui.BtnAsDisable.Add_Click({ Safe {
     Refresh-AutoSwitch
 } })
 $ui.BtnAsCheck.Add_Click({ Safe {
-    Start-Process powershell.exe -WindowStyle Hidden -ArgumentList @('-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass',
-        '-File', "`"$(Join-Path $PSScriptRoot 'AutoSwitch.ps1')`"", '-Once')
+    if (-not (Test-Path $AsExe)) { throw "找不到 VDDManager.exe。从源码运行时请先执行 build.ps1。" }
+    Start-Process $AsExe -ArgumentList '--autoswitch-once'
     Set-Status '正在检查显示器，几秒后会更新记录。'
     $script:refreshIn = 4
 } })
