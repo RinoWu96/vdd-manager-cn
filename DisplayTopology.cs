@@ -71,6 +71,24 @@ namespace VddCn
         const uint SDC_SAVE_TO_DATABASE = 0x200, SDC_ALLOW_CHANGES = 0x400;
         const uint TECH_INTERNAL = 0x80000000, TECH_LVDS = 6, TECH_DP_EMBEDDED = 11, TECH_UDI_EMBEDDED = 13, TECH_INDIRECT_VIRTUAL = 17;
 
+        [DllImport("user32.dll")] static extern int DisplayConfigGetDeviceInfo(IntPtr info);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        struct DEVMODE
+        {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+            public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra;
+            public int dmFields, dmPositionX, dmPositionY, dmDisplayOrientation, dmDisplayFixedOutput;
+            public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+            public short dmLogPixels;
+            public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
+            public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2;
+            public int dmPanningWidth, dmPanningHeight;
+        }
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplaySettings(string device, int mode, ref DEVMODE dm);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int ChangeDisplaySettingsEx(string device, ref DEVMODE dm, IntPtr hwnd, int flags, IntPtr lParam);
+
         // 设备路径里含这些标识的视为虚拟屏：VDD、TeamViewer、Parsec、IddSample 等
         static readonly string[] VirtualIds = { "MTT1337", "TMV0000", "PSCCDD", "IDD_HDR", "LNXVDD", "RDPUDD" };
         const string VddId = "MTT1337";
@@ -202,6 +220,56 @@ namespace VddCn
             }
             return SetDisplayConfig((uint)arr.Length, arr, (uint)modeArr.Length, modeArr,
                 SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES | SDC_SAVE_TO_DATABASE);
+        }
+
+        // 显示器的推荐（原生）模式 {宽, 高, 刷新率}；取不到返回 null
+        public static int[] GetPreferredMode(DisplayTarget t)
+        {
+            // DISPLAYCONFIG_TARGET_PREFERRED_MODE：header(20) + width(4) + height(4) + 对齐到 32 + targetMode(48)
+            const int size = 80;
+            IntPtr buf = Marshal.AllocHGlobal(size);
+            try
+            {
+                for (int i = 0; i < size; i++) Marshal.WriteByte(buf, i, 0);
+                Marshal.WriteInt32(buf, 0, 3);                // DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_PREFERRED_MODE
+                Marshal.WriteInt32(buf, 4, size);
+                Marshal.WriteInt32(buf, 8, (int)t.AdapterLow);
+                Marshal.WriteInt32(buf, 12, t.AdapterHigh);
+                Marshal.WriteInt32(buf, 16, (int)t.Id);
+                if (DisplayConfigGetDeviceInfo(buf) != 0) return null;
+                int w = Marshal.ReadInt32(buf, 20), h = Marshal.ReadInt32(buf, 24);
+                uint num = (uint)Marshal.ReadInt32(buf, 48), den = (uint)Marshal.ReadInt32(buf, 52);   // videoSignalInfo.vSyncFreq
+                int hz = den == 0 ? 0 : (int)Math.Round((double)num / den);
+                return w > 0 && h > 0 ? new int[] { w, h, hz } : null;
+            }
+            finally { Marshal.FreeHGlobal(buf); }
+        }
+
+        // 把已启用的实体显示器调成推荐（原生）分辨率，返回做了哪些修改（没有修改返回空字符串）
+        // 例如 16:10 的内屏被套上 16:9 的分辨率时，画面上下会出现黑边
+        public static string UseNativeResolution()
+        {
+            var changes = new List<string>();
+            foreach (var t in GetTargets())
+            {
+                if (t.IsVirtual || !t.Active || string.IsNullOrEmpty(t.Gdi)) continue;
+                int[] p = GetPreferredMode(t);
+                if (p == null) continue;
+                var dm = new DEVMODE();
+                dm.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+                if (!EnumDisplaySettings(t.Gdi, -1, ref dm)) continue;
+                // 竖屏（旋转 90° / 270°）时宽高互换
+                bool portrait = dm.dmDisplayOrientation == 1 || dm.dmDisplayOrientation == 3;
+                int nw = portrait ? p[1] : p[0], nh = portrait ? p[0] : p[1];
+                if (dm.dmPelsWidth == nw && dm.dmPelsHeight == nh) continue;
+                string from = dm.dmPelsWidth + "×" + dm.dmPelsHeight;
+                dm.dmPelsWidth = nw; dm.dmPelsHeight = nh;
+                dm.dmFields = 0x80000 | 0x100000;                       // DM_PELSWIDTH | DM_PELSHEIGHT
+                if (p[2] > 0) { dm.dmDisplayFrequency = p[2]; dm.dmFields |= 0x400000; }   // DM_DISPLAYFREQUENCY
+                int r = ChangeDisplaySettingsEx(t.Gdi, ref dm, IntPtr.Zero, 0x1, IntPtr.Zero);   // CDS_UPDATEREGISTRY
+                changes.Add(t.Label + " " + from + " → " + nw + "×" + nh + (p[2] > 0 ? "@" + p[2] + "Hz" : "") + "（结果 " + r + "）");
+            }
+            return string.Join("；", changes.ToArray());
         }
     }
 }

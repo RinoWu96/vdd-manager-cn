@@ -1,5 +1,5 @@
 ﻿// 自动切换虚拟屏（运行在 VDDManager.exe --autoswitch 里，不需要 PowerShell）：
-//   - 有实体显示器（笔记本内屏或外接屏）接入时，启用实体屏并断开 VDD 虚拟屏；
+//   - 有实体显示器（笔记本内屏或外接屏）接入时，启用实体屏、断开 VDD 虚拟屏，并把实体屏调回原生分辨率；
 //   - 实体显示器都不可用时（例如合盖远程），接回 VDD 虚拟屏。
 // 只在实体显示器接入 / 拔出的那一刻动作，之后手动调整的布局不会被覆盖。
 // 由显示器插拔、显示设置变化、合盖 / 开盖、睡眠唤醒等系统通知触发，另每 30 秒兜底检查一次。
@@ -78,6 +78,9 @@ namespace VddCn
             }
             if (s.VddActive.Count > 0 && s.PhysicalActive.Count > 0)
                 Log("断开虚拟屏，结果 " + Topology.DetachVdd());
+            // 恢复布局时实体屏可能被套上虚拟屏的分辨率（比如 16:10 内屏跑 1920×1080，上下有黑边），改回原生分辨率
+            string fixes = Topology.UseNativeResolution();
+            if (fixes.Length > 0) Log("改回原生分辨率：" + fixes);
         }
 
         // 接回虚拟屏：只剩虚拟屏可用时，“扩展”就等于启用它
